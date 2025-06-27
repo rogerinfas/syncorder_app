@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Mozo - SyncOrder{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Título y sección de mesas -->
+    <h1 class="text-3xl font-bold text-center mb-8">Seleccione una Mesa</h1>
+    
+    <!-- Grid de mesas (20 mesas con íconos) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 mb-8" id="mesas-grid">
+        {% for mesa in range(1, 21) %}
+        <div class="bg-white p-4 rounded-lg shadow-md text-center cursor-pointer hover:bg-blue-50 transition mesa-item" data-mesa="{{ mesa }}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
+            </svg>
+            <p class="mt-2 font-semibold">Mesa {{ mesa }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Modal de Menú (oculto inicialmente) -->
+    <div id="menu-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">Menú - Mesa <span id="mesa-seleccionada"></span></h2>
+            
+            <!-- Pestañas de Comidas/Bebidas -->
+            <div class="flex border-b mb-4">
+                <button class="tab-button py-2 px-4 font-medium text-blue-600 border-b-2 border-blue-600" data-tab="comidas">Comidas</button>
+                <button class="tab-button py-2 px-4 font-medium text-gray-500" data-tab="bebidas">Bebidas</button>
+            </div>
+
+            <!-- Lista de productos (simulados) -->
+            <div id="comidas" class="tab-content grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for item in menu_comidas %}
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                    <span>{{ item.nombre }} - S/ {{ item.precio }}</span>
+                    <div class="flex items-center space-x-2">
+                        <button class="bg-red-500 text-white px-2 rounded-full remove-item">-</button>
+                        <span class="quantity">0</span>
+                        <button class="bg-green-500 text-white px-2 rounded-full add-item">+</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="bebidas" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for item in menu_bebidas %}
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                    <span>{{ item.nombre }} - S/ {{ item.precio }}</span>
+                    <div class="flex items-center space-x-2">
+                        <button class="bg-red-500 text-white px-2 rounded-full remove-item">-</button>
+                        <span class="quantity">0</span>
+                        <button class="bg-green-500 text-white px-2 rounded-full add-item">+</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Botones del modal -->
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="cancelar-modal" class="px-4 py-2 bg-gray-300 rounded-lg">Cancelar</button>
+                <button id="confirmar-pedido" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen del Pedido (oculto inicialmente) -->
+    <div id="resumen-pedido" class="hidden mt-8 bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-4">Resumen del Pedido - Mesa <span id="mesa-resumen"></span></h2>
+        <div id="items-resumen" class="mb-4">
+            <!-- Aquí se agregarán los items dinámicamente con JS -->
+            <p class="text-gray-500">No hay items seleccionados.</p>
+        </div>
+        
+        <!-- Observaciones -->
+        <div class="mb-4">
+            <label for="observaciones" class="block font-medium mb-2">Observaciones:</label>
+            <textarea id="observaciones" class="w-full p-2 border rounded-lg" rows="2" placeholder="Ej: Sin gluten, bien cocido..."></textarea>
+        </div>
+        
+        <!-- Botón de enviar a cocina -->
+        <button id="enviar-cocina" class="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">
+            Enviar a Cocina
+        </button>
+    </div>
+</div>
+
+<!-- Script para simular interacción -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Selección de mesa
+        const mesas = document.querySelectorAll('.mesa-item');
+        const modal = document.getElementById('menu-modal');
+        const resumen = document.getElementById('resumen-pedido');
+
+        mesas.forEach(mesa => {
+            mesa.addEventListener('click', () => {
+                // Bloquear otras mesas
+                mesas.forEach(m => m.classList.add('opacity-50', 'cursor-not-allowed'));
+                mesa.classList.remove('opacity-50', 'cursor-not-allowed');
+                mesa.classList.add('ring-2', 'ring-blue-600');
+                
+                // Mostrar modal con la mesa seleccionada
+                document.getElementById('mesa-seleccionada').textContent = mesa.dataset.mesa;
+                modal.classList.remove('hidden');
+            });
+        });
+
+        // Tabs del modal
+        const tabs = document.querySelectorAll('.tab-button');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('text-blue-600', 'border-blue-600'));
+                tab.classList.add('text-blue-600', 'border-blue-600');
+                
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                document.getElementById(tab.dataset.tab).classList.remove('hidden');
+            });
+        });
+
+        // Simular añadir/eliminar items (prototipo)
+        document.querySelectorAll('.add-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const quantitySpan = e.target.parentElement.querySelector('.quantity');
+                quantitySpan.textContent = parseInt(quantitySpan.textContent) + 1;
+            });
+        });
+
+        document.querySelectorAll('.remove-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const quantitySpan = e.target.parentElement.querySelector('.quantity');
+                if (parseInt(quantitySpan.textContent) > 0) {
+                    quantitySpan.textContent = parseInt(quantitySpan.textContent) - 1;
+                }
+            });
+        });
+
+        // Confirmar pedido (cerrar modal y mostrar resumen)
+        document.getElementById('confirmar-pedido').addEventListener('click', () => {
+            modal.classList.add('hidden');
+            resumen.classList.remove('hidden');
+            document.getElementById('mesa-resumen').textContent = 
+                document.getElementById('mesa-seleccionada').textContent;
+            
+            // Simular items en resumen (prototipo)
+            document.getElementById('items-resumen').innerHTML = `
+                <div class="flex justify-between py-2 border-b">
+                    <span>Lomo Saltado</span>
+                    <span>2x S/ 25.00</span>
+                </div>
+                <div class="flex justify-between py-2 border-b">
+                    <span>Inca Kola</span>
+                    <span>1x S/ 5.00</span>
+                </div>
+                <div class="flex justify-between py-2 font-bold mt-2">
+                    <span>Total:</span>
+                    <span>S/ 55.00</span>
+                </div>
+            `;
+        });
+
+        // Cancelar modal
+        document.getElementById('cancelar-modal').addEventListener('click', () => {
+            modal.classList.add('hidden');
+            mesas.forEach(m => m.classList.remove('opacity-50', 'cursor-not-allowed', 'ring-2', 'ring-blue-600'));
+        });
+    });
+</script>
+{% endblock %}
